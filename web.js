@@ -89,6 +89,13 @@ function handle_facebook_request(req, res) {
           req.friends_using_app = result;
           cb();
         });
+      },
+      function(cb) {
+        // query 10 links and send them to the socket for this socket id
+        req.facebook.get('/me/links', { limit: 10 }, function(links) {
+          req.links = links;
+          cb();
+        });
       }
     ], function() {
       render_page(req, res);

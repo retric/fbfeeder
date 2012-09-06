@@ -230,6 +230,27 @@
         </ul>
       </div>
 
+      <div class="list">
+        <h3>Links you've posted</h3>
+        <ul id="links" class="links">
+          <% req.links.forEach(function(link) { %>
+          <li>
+            <div>
+              <a href="<%= link.link %>" target="_top">
+                <img src="<%= link.picture %>">
+              </a>
+            </div>
+            <div>
+            <a href="<%= link.link %>" target="_top">
+              <div><strong><%= link.name %></strong></div>
+              <div><%= link.description %></div>
+            </a>
+            </div>
+          </li>
+          <% }); %>
+        </ul>
+      </div>
+
     </section>
 
     <% } %>
