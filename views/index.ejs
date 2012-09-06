@@ -80,6 +80,15 @@
             }
           );
         });
+
+        $('#logout').click(function() {
+          FB.logout(
+            function (response) {
+              // user is now logged out
+              location.reload();
+            }
+          );
+        });
       });
     </script>
 
@@ -137,6 +146,7 @@
           This is your app
           <a href="<%= app.link %>" target="_top"><%= app.name %></a>
         </p>
+        <div class="logout"><a href="#" id="logout">Logout</a></div>
 
         <div id="share-app">
           <p>Share your app:</p>
@@ -162,7 +172,7 @@
       <% } else { %>
       <div>
         <h1>Welcome</h1>
-        <div class="fb-login-button" data-scope="user_likes,user_photos"></div>
+        <div class="fb-login-button" data-scope="user_likes,user_photos" scope="read_stream"></div>
       </div>
       <% } %>
     </header>

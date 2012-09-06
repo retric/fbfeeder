@@ -67,6 +67,10 @@ header .tagline {
   float: left;
 }
 
+header .logout {
+  float: right;
+}
+
 #share-app {
   float: right;
   width: 344px;
