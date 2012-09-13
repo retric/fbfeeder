@@ -64,7 +64,7 @@ function handle_facebook_request(req, res) {
     async.parallel([
       function(cb) {
         // query 4 friends and send them to the socket for this socket id
-        req.facebook.get('/me/friends', { limit: 4 }, function(friends) {
+        req.facebook.get('/me/friends', {}, function(friends) {
           req.friends = friends;
           cb();
         });
