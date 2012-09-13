@@ -28,7 +28,6 @@
 
     <script type="text/javascript" src="/scripts/jquery.min.js"></script>
     <script type="text/javascript" src="/scripts/jquery-ui-1.8.23.custom.min.js"></script>
-
     <script type="text/javascript">
       function logResponse(response) {
         if (console && console.log) {
@@ -93,9 +92,29 @@
         });
 
         $('#friendlist').autocomplete({
-          source: req.friends,
-          minLength: 2
+          source: function (req, res) {
+            $.ajax( {
+              url: "/searchJSON",
+              dataType: "jsonp",
+              data: {
+                featureClass: "p",
+                style: "full",
+                maxRows: 12,
+                name_startsWith: request.term
+              },
+              success: function (data) {
+               res( $.map(data, function (friend) {
+                  return {
+                    label: friend.name,
+                    value: friend.name
+                  }
+                })); 
+              }
+            });
+          },
+         minLength: 2 
         });
+
       });
     </script>
 
@@ -149,10 +168,6 @@
 
       <div>
         <h1>Welcome, <strong><%= user.name %></strong></h1>
-        <p class="tagline">
-          This is your app
-          <a href="<%= app.link %>" target="_top"><%= app.name %></a>
-        </p>
         <div class="test">
           <input type="text" id="friendlist" placeholder="Find your friends" />
         </div> 
