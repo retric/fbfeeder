@@ -94,13 +94,13 @@
         $('#friendlist').autocomplete({
           source: function (req, res) {
             $.ajax( {
-              url: "/searchJSON",
+              url: "/friendlist",
               dataType: "jsonp",
               data: {
                 featureClass: "p",
                 style: "full",
                 maxRows: 12,
-                name_startsWith: request.term
+                name_startsWith: req.term
               },
               success: function (data) {
                res( $.map(data, function (friend) {

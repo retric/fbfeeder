@@ -17,6 +17,21 @@ var app = express.createServer(
   })
 );
 
+// set up mongodb 
+
+var mongo = require('mongodb'),
+  Server = mongo.Server,
+  Db = mongo.Db;
+
+var server = new Server('localhost', 27017, {auto_reconnect: true});
+var db = new Db('friendDb', server);
+
+db.open(function(err, db) {
+    if (!err) {
+      console.log("Db connection established.");
+    }
+  });
+
 // listen to the PORT given to us in the environment
 var port = process.env.PORT || 3000;
 
@@ -66,20 +81,7 @@ function handle_facebook_request(req, res) {
         // query 4 friends and send them to the socket for this socket id
         req.facebook.get('/me/friends', { limit: 4 }, function(friends) {
           req.friends = JSON.stringify(friends);
-          cb();
-        });
-      },
-      function(cb) {
-        // query 16 photos and send them to the socket for this socket id
-        req.facebook.get('/me/photos', { limit: 16 }, function(photos) {
-          req.photos = photos;
-          cb();
-        });
-      },
-      function(cb) {
-        // query 4 likes and send them to the socket for this socket id
-        req.facebook.get('/me/likes', { limit: 4 }, function(likes) {
-          req.likes = likes;
+          console.log(req.friends);
           cb();
         });
       },
@@ -106,5 +108,15 @@ function handle_facebook_request(req, res) {
   }
 }
 
+function retrieve_friends(req, res) {
+  
+  // if the user is logged in
+  if (req.facebook.token) {
+    console.log("json retrieval");
+    console.log(req.friends);
+  }  
+}
+
 app.get('/', handle_facebook_request);
 app.post('/', handle_facebook_request);
+app.get('/friendlist', retrieve_friends);
