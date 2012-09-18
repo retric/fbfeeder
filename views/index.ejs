@@ -87,7 +87,7 @@
           $.ajax( {
             type: "POST",
             url: "/logout",
-            dataType: "jsonp",
+            dataType: "json",
             data: {
               uid: '<%= user.id %>'
             },
@@ -104,25 +104,27 @@
         $('#friendlist').autocomplete({
           source: function (req, res) {
             $.ajax( {
+              type: "POST",
               url: "/friendlist",
-              dataType: "jsonp",
+              dataType: "json",
               data: {
-                featureClass: "p",
-                style: "full",
-                maxRows: 12,
-                name_startsWith: req.term
+                name_startsWith: req.term,
+                uid: '<%= user.id %>'
               },
               success: function (data) {
-               res( $.map(data, function (friend) {
+                res($.map(data, function (friend) {
                   return {
                     label: friend.name,
                     value: friend.name
                   }
-                })); 
+                }).slice(0, 10)); 
+              },
+              error: function() {
+                console.log("ajax error");
               }
             });
           },
-         minLength: 2 
+         minLength: 1 
         });
 
         <% } %>
@@ -213,11 +215,6 @@
       </div>
       <% } %>
     </header>
-
-    <section id="get-started">
-      <p>Welcome to your Facebook app, running on <span>heroku</span>!</p>
-      <a href="https://devcenter.heroku.com/articles/facebook" target="_top" class="button">Learn How to Edit This App</a>
-    </section>
 
     <% if (user) { %>
 
