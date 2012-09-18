@@ -18,7 +18,6 @@ var app = express.createServer(
 );
 
 // set up mongodb 
-
 var mongo = require('mongodb'),
   Server = mongo.Server,
   Db = mongo.Db;
@@ -65,7 +64,7 @@ function render_page(req, res) {
         layout:    false,
         req:       req,
         app:       app,
-        user:      user
+        user:      user,
       });
     });
   });
@@ -81,7 +80,18 @@ function handle_facebook_request(req, res) {
         // query 4 friends and send them to the socket for this socket id
         req.facebook.get('/me/friends', { limit: 4 }, function(friends) {
           req.friends = JSON.stringify(friends);
-          console.log(req.friends);
+          req.facebook.me(function(user) {
+            
+            // insert friend list into a collection corresponding to fb user id
+            db.collection(user.id, function(err, collection) {
+              if (err) throw err;
+              collection.insert(friends, {safe:true}, function(err, result) {
+                if (err) throw err;
+              });
+            });
+
+            console.log("friend list item:");
+          })
           cb();
         });
       },
@@ -108,15 +118,25 @@ function handle_facebook_request(req, res) {
   }
 }
 
+// handle json retrieval of friend list by autocomplete form
 function retrieve_friends(req, res) {
   
   // if the user is logged in
   if (req.facebook.token) {
     console.log("json retrieval");
     console.log(req.friends);
-  }  
+  } else {
+    console.log("user not logged in");
+  }
+}
+
+// handle logout 
+function logout(req, res) {
+  console.log("logging out");
+  console.log(req.body);
 }
 
 app.get('/', handle_facebook_request);
 app.post('/', handle_facebook_request);
 app.get('/friendlist', retrieve_friends);
+app.post('/logout', logout);

@@ -82,13 +82,23 @@
           );
         });
 
+        <% if (user) { %>
         $('#logout').click(function() {
+          $.ajax( {
+            type: "POST",
+            url: "/logout",
+            dataType: "jsonp",
+            data: {
+              uid: '<%= user.id %>'
+            },
+            success: function (data) {}
+          });
           FB.logout(
             function (response) {
               // user is now logged out
               location.reload();
             }
-          );
+          ); 
         });
 
         $('#friendlist').autocomplete({
@@ -114,6 +124,8 @@
           },
          minLength: 2 
         });
+
+        <% } %>
 
       });
     </script>
