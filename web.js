@@ -126,7 +126,7 @@ function retrieve_friends(req, res) {
     db.collection(body.uid, function(err, collection) {
       var reg = new RegExp("(^" + body.name_startsWith + ".*)|(.+ " + body.name_startsWith +")", "i");
       console.log(reg);
-      var result1 = collection.find({"name": reg}).toArray(function(err, array) { 
+      collection.find({"name": reg}).toArray(function(err, array) { 
         res.send(JSON.stringify(array));
       });
     });
@@ -135,9 +135,16 @@ function retrieve_friends(req, res) {
   }
 }
 
+// retrieve the links corresponding to a given uid
+function retrieve_links(req, res) {
+  console.log(req.body.uid);
+  req.facebook.get("/" + req.body.uid + "/links", {}, function(links) {
+    res.send(JSON.stringify(links));
+  })
+}
+
 // handle logout 
 function logout(req, res) {
-  console.log("logging out");
   db.dropCollection(req.body.uid, function() {});
 }
 
@@ -145,3 +152,4 @@ app.get('/', handle_facebook_request);
 app.post('/', handle_facebook_request);
 app.post('/friendlist', retrieve_friends);
 app.post('/logout', logout);
+app.post('/retrievelinks', retrieve_links);
