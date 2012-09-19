@@ -9,12 +9,12 @@ exports.scheme = function(req, res) {
   
 exports.url = function(req, res) {
     return function(path) {
-      return app.dynamicViewHelpers.scheme(req, res) + app.dynamicViewHelpers.url_no_scheme(req, res)(path);
+      return scheme(req, res) + url_no_scheme(req, res)(path);
     }
 }
 
 exports.url_no_scheme = function(req, res) {
   return function(path) {
-    return '://' + app.dynamicViewHelpers.host(req, res) + (path || ''); 
+    return '://' + host(req, res) + (path || ''); 
   }
 }
