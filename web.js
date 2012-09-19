@@ -17,7 +17,7 @@ var app = express.createServer(
   })
 );
 
-// set up mongodb 
+// set up mongodb
 var mongo = require('mongodb'),
   Server = mongo.Server,
   Db = mongo.Db;
@@ -54,7 +54,7 @@ app.dynamicHelpers({
     return function(path) {
       return '://' + app.dynamicViewHelpers.host(req, res) + (path || '');
     }
-  },
+  }
 });
 
 function render_page(req, res) {
@@ -64,7 +64,7 @@ function render_page(req, res) {
         layout:    false,
         req:       req,
         app:       app,
-        user:      user,
+        user:      user
       });
     });
   });
@@ -91,7 +91,7 @@ function handle_facebook_request(req, res) {
             });
 
             console.log("friend list item:");
-          })
+          });
           cb();
         });
       },
@@ -126,7 +126,7 @@ function retrieve_friends(req, res) {
     db.collection(body.uid, function(err, collection) {
       var reg = new RegExp("(^" + body.name_startsWith + ".*)|(.+ " + body.name_startsWith +")", "i");
       console.log(reg);
-      collection.find({"name": reg}).toArray(function(err, array) { 
+      collection.find({"name": reg}).toArray(function(err, array) {
         res.send(JSON.stringify(array));
       });
     });
