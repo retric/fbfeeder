@@ -1,16 +1,21 @@
 var async   = require('async');
 var express = require('express');
 var util    = require('util');
+var dynamicHelpers = require('./dynamicHelpers');
 
 // create an express webserver
-var app = express.createServer(
-  express.logger(),
-  express.static(__dirname + '/public'),
-  express.bodyParser(),
-  express.cookieParser(),
-  // set this to a secret value to encrypt session cookies
-  express.session({ secret: process.env.SESSION_SECRET || 'secret123' }),
-  require('faceplate').middleware({
+var app = express()
+  , http = require('http');
+http.createServer(app);
+
+app.use(express.logger());
+app.use(express.static(__dirname + '/public'));
+app.use(express.bodyParser());
+app.use(express.cookieParser());
+
+// set this to a secret value to encrypt session cookies
+app.use(express.session({ secret: process.env.SESSION_SECRET || 'secret123' }));
+app.use(require('faceplate').middleware({
     app_id: process.env.FACEBOOK_APP_ID,
     secret: process.env.FACEBOOK_SECRET,
     scope:  'user_likes,user_photos,user_photo_video_tags'
@@ -38,24 +43,7 @@ app.listen(port, function() {
   console.log("Listening on " + port);
 });
 
-app.dynamicHelpers({
-  'host': function(req, res) {
-    return req.headers['host'];
-  },
-  'scheme': function(req, res) {
-    return req.headers['x-forwarded-proto'] || 'http';
-  },
-  'url': function(req, res) {
-    return function(path) {
-      return app.dynamicViewHelpers.scheme(req, res) + app.dynamicViewHelpers.url_no_scheme(req, res)(path);
-    }
-  },
-  'url_no_scheme': function(req, res) {
-    return function(path) {
-      return '://' + app.dynamicViewHelpers.host(req, res) + (path || '');
-    }
-  }
-});
+app.dynamicHelpers = dynamicHelpers;
 
 function render_page(req, res) {
   req.facebook.app(function(app) {
@@ -139,11 +127,19 @@ function retrieve_friends(req, res) {
 function retrieve_links(req, res) {
   console.log(req.body.uid);
   req.facebook.get("/" + req.body.uid + "/links", {}, function(links) {
-    res.send(JSON.stringify(links));
-  })
+    res.set('Content-Type', 'text/xml');
+    res.render('rss.ejs', {
+      layout:   false,
+      user:     req.body.name,
+      links:    links
+    },
+    function(err, html) {
+      if (err) console.log(err);
+    });
+  });
 }
 
-// handle logout 
+// handle logout
 function logout(req, res) {
   db.dropCollection(req.body.uid, function() {});
 }

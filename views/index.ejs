@@ -85,8 +85,9 @@
           $.ajax( {
             type: "POST",
             url: "/retrievelinks",
-            dataType: "json",
+            dataType: "xml",
             data: {
+              name: ui.item.label,
               uid: ui.item.id
             },
             success: function (data) {
