@@ -20,8 +20,8 @@
     <!-- 'https://developers.facebook.com/docs/opengraph/'       -->
     <meta property="og:title" content="<%= app.name %>" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="<%= url() %>" />
-    <meta property="og:image" content="<%= url('/logo.png') %>" />
+    <meta property="og:url" content="<%= url %>" />
+    <meta property="og:image" content="<%= url_logo %>" />
     <meta property="og:site_name" content="<%= app.name %>" />
     <meta property="og:description" content="My first app" />
     <meta property="fb:app_id" content="<%= app.id %>" />
@@ -120,7 +120,7 @@
       window.fbAsyncInit = function() {
         FB.init({
           appId      : '<%= app.id %>', // App ID
-          channelUrl : '<%= url_no_scheme('/channel.html') %>', // Channel File
+          channelUrl : '<%= channel %>', // Channel File
           status     : true, // check login status
           cookie     : true, // enable cookies to allow the server to access the session
           xfbml      : true // parse XFBML

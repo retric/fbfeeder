@@ -9,12 +9,12 @@ exports.scheme = function(req, res) {
   
 exports.url = function(req, res) {
     return function(path) {
-      return scheme(req, res) + url_no_scheme(req, res)(path);
+      return exports.scheme(req, res) + exports.url_no_scheme(req, res)(path);
     }
 }
 
 exports.url_no_scheme = function(req, res) {
   return function(path) {
-    return '://' + host(req, res) + (path || ''); 
+    return '://' + exports.host(req, res) + (path || '');
   }
 }

@@ -22,6 +22,16 @@ app.use(require('faceplate').middleware({
   })
 );
 
+// workaround for dynamichelpers in express 3
+app.use(function(req, res, next){
+  res.locals.url = dynamicHelpers.url(req, res)();
+  res.locals.url_logo = dynamicHelpers.url(req, res)('/logo.png');
+  res.locals.channel = dynamicHelpers.url_no_scheme(req, res)('/channel.html');
+  next();
+})
+
+app.engine('xml', require('ejs').renderFile);
+
 // set up mongodb
 var mongo = require('mongodb'),
   Server = mongo.Server,
@@ -43,13 +53,10 @@ app.listen(port, function() {
   console.log("Listening on " + port);
 });
 
-app.dynamicHelpers = dynamicHelpers;
-
 function render_page(req, res) {
   req.facebook.app(function(app) {
     req.facebook.me(function(user) {
       res.render('index.ejs', {
-        layout:    false,
         req:       req,
         app:       app,
         user:      user
@@ -129,12 +136,8 @@ function retrieve_links(req, res) {
   req.facebook.get("/" + req.body.uid + "/links", {}, function(links) {
     res.set('Content-Type', 'text/xml');
     res.render('rss.ejs', {
-      layout:   false,
       user:     req.body.name,
       links:    links
-    },
-    function(err, html) {
-      if (err) console.log(err);
     });
   });
 }
