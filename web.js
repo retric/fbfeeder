@@ -86,7 +86,6 @@ function handle_facebook_request(req, res) {
               });
             });
 
-            console.log("friend list item:");
           });
           cb();
         });
@@ -133,13 +132,24 @@ function retrieve_friends(req, res) {
 
 // retrieve the links corresponding to a given uid
 function retrieve_links(req, res) {
-  req.facebook.get("/" + req.query.uid + "/links", {}, function(links) {
-    res.set('Content-Type', 'text/xml');
-    res.render('rss.ejs', {
-      user:     req.query.name,
-      links:    links
+  if (req.facebook.token) {
+    req.facebook.get('/me/permissions', {}, function(res) {
+      console.log("Permissions");
+      console.log(res);
+    })
+    req.facebook.get("/" + req.params.id, {}, function(user) {
+      req.facebook.get("/" + req.params.id + "/links", {}, function(links) {
+        res.set('Content-Type', 'text/xml');
+        res.render('rss.ejs', {
+          user:     user.name,
+          links:    links
+        });
+      });
     });
-  });
+ } else {
+    // remote access of feed itself
+    console.log("user not logged in");
+ }
 }
 
 // handle logout
@@ -151,4 +161,5 @@ app.get('/', handle_facebook_request);
 app.post('/', handle_facebook_request);
 app.post('/friendlist', retrieve_friends);
 app.post('/logout', logout);
-app.get('/retrievelinks', retrieve_links);
+app.get('/:user', handle_facebook_request);
+app.get('/:user/:id', retrieve_links);

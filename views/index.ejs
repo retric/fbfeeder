@@ -97,8 +97,8 @@
             error: function() {
               console.log("ajax failure");
             }
-          }); */
-          var link = "/retrievelinks?user=" + '<%= user.username %>' + "&name=" + ui.item.label + "&uid=" + ui.item.id; 
+          }); */ 
+          var link = "/" + '<%= user.username %>' + "/" + ui.item.id;
           window.location.href = link;
          } 
         });
