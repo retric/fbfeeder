@@ -82,8 +82,8 @@
          minLength: 1,
          select: function(event, ui) {
           $('#friendlist').val(ui.item.label);
-          $.ajax( {
-            type: "POST",
+          /*$.ajax( {
+            type: "GET",
             url: "/retrievelinks",
             dataType: "xml",
             data: {
@@ -97,7 +97,9 @@
             error: function() {
               console.log("ajax failure");
             }
-          });
+          }); */
+          var link = "/retrievelinks?user=" + '<%= user.username %>' + "&name=" + ui.item.label + "&uid=" + ui.item.id; 
+          window.location.href = link;
          } 
         });
 

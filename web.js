@@ -56,6 +56,7 @@ app.listen(port, function() {
 function render_page(req, res) {
   req.facebook.app(function(app) {
     req.facebook.me(function(user) {
+      console.log(user);
       res.render('index.ejs', {
         req:       req,
         app:       app,
@@ -132,11 +133,10 @@ function retrieve_friends(req, res) {
 
 // retrieve the links corresponding to a given uid
 function retrieve_links(req, res) {
-  console.log(req.body.uid);
-  req.facebook.get("/" + req.body.uid + "/links", {}, function(links) {
+  req.facebook.get("/" + req.query.uid + "/links", {}, function(links) {
     res.set('Content-Type', 'text/xml');
     res.render('rss.ejs', {
-      user:     req.body.name,
+      user:     req.query.name,
       links:    links
     });
   });
@@ -151,4 +151,4 @@ app.get('/', handle_facebook_request);
 app.post('/', handle_facebook_request);
 app.post('/friendlist', retrieve_friends);
 app.post('/logout', logout);
-app.post('/retrievelinks', retrieve_links);
+app.get('/retrievelinks', retrieve_links);
