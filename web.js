@@ -1,6 +1,7 @@
 var async   = require('async');
 var express = require('express');
 var util    = require('util');
+var https   = require('https');
 var dynamicHelpers = require('./dynamicHelpers');
 
 // create an express webserver
@@ -21,6 +22,9 @@ app.use(require('faceplate').middleware({
     scope:  'user_likes,user_photos,user_photo_video_tags'
   })
 );
+
+var app_id = process.env.FACEBOOK_APP_ID;
+var secret = process.env.FACEBOOK_SECRET;
 
 // workaround for dynamichelpers in express 3
 app.use(function(req, res, next){
@@ -46,6 +50,11 @@ db.open(function(err, db) {
     }
   });
 
+// setup for facebook extended token storage/retrieval
+db.createCollection('tokens', function(err, collection) {
+  if (err) console.log(err);
+});
+
 // listen to the PORT given to us in the environment
 var port = process.env.PORT || 3000;
 
@@ -56,11 +65,11 @@ app.listen(port, function() {
 function render_page(req, res) {
   req.facebook.app(function(app) {
     req.facebook.me(function(user) {
-      console.log(user);
       res.render('index.ejs', {
         req:       req,
         app:       app,
-        user:      user
+        user:      user,
+        app_id:    process.env.FACEBOOK_APP_ID
       });
     });
   });
@@ -72,6 +81,36 @@ function handle_facebook_request(req, res) {
   if (req.facebook.token) {
 
     async.parallel([
+      function(cb) {
+        // check if token exists for current user
+        req.facebook.me(function(user) {
+          db.collection('tokens', function(err, collection) {
+            if (err) console.log(err);
+            collection.findOne({id:user.id}, function(err, item) {
+              // add token into db if one doesn't exist
+              if (item == null) {
+                var options = {
+                  host: 'graph.facebook.com',
+                  path: '/oauth/access_token?client_id=' + app_id + 
+                  '&client_secret=' + secret +
+                  '&grant_type=fb_exchange_token&fb_exchange_token=' + req.facebook.token,
+                  method: 'GET'
+                };
+                console.log(options);
+                var request = https.request(options, function(response) {
+                  console.log("statusCode: ", response.statusCode);
+                  console.log("headers: ", response.headers);
+                  console.log("https");
+                  var entry = {id:user.id, token:response.body.token};
+                  collection.insert(entry, {safe: true}, function(err, collection) {});
+                });
+                request.end();
+              }
+            });
+          });
+          cb();
+        });
+      },
       function(cb) {
         // query 4 friends and send them to the socket for this socket id
         req.facebook.get('/me/friends', { }, function(friends) {
@@ -155,6 +194,7 @@ function retrieve_links(req, res) {
 // handle logout
 function logout(req, res) {
   db.dropCollection(req.body.uid, function() {});
+  db.collection('tokens').remove();
 }
 
 app.get('/', handle_facebook_request);
