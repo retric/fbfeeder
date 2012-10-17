@@ -2,6 +2,7 @@ var async   = require('async');
 var express = require('express');
 var util    = require('util');
 var https   = require('https');
+var fs      = require('fs');
 var dynamicHelpers = require('./dynamicHelpers');
 
 // create an express webserver
@@ -84,30 +85,30 @@ function handle_facebook_request(req, res) {
       function(cb) {
         // check if token exists for current user
         req.facebook.me(function(user) {
-          db.collection('tokens', function(err, collection) {
-            if (err) console.log(err);
-            collection.findOne({id:user.id}, function(err, item) {
-              // add token into db if one doesn't exist
-              if (item == null) {
-                var options = {
-                  host: 'graph.facebook.com',
-                  path: '/oauth/access_token?client_id=' + app_id + 
-                  '&client_secret=' + secret +
-                  '&grant_type=fb_exchange_token&fb_exchange_token=' + req.facebook.token,
-                  method: 'GET'
-                };
-                console.log(options);
-                var request = https.request(options, function(response) {
-                  console.log("statusCode: ", response.statusCode);
-                  console.log("headers: ", response.headers);
-                  console.log("https");
-                  var entry = {id:user.id, token:response.body.token};
-                  collection.insert(entry, {safe: true}, function(err, collection) {});
-                });
-                request.end();
-              }
+          if (user != null && user.id != null) {
+            db.collection('tokens', function(err, collection) {
+              if (err) console.log(err);
+              collection.findOne({username:user.username}, function(err, item) {
+                // add token into db if one doesn't exist
+                if (item == null) {
+                  var options = {
+                    host: 'graph.facebook.com',
+                    path: '/oauth/access_token?client_id=' + app_id + 
+                    '&client_secret=' + secret +
+                    '&grant_type=fb_exchange_token&fb_exchange_token=' + req.facebook.token,
+                    method: 'GET'
+                  };
+                  https.get(options, function(response) {
+                    response.on("data", function(chunk) {
+                      fs.writeFileSync('log.txt', chunk, encoding='utf8', console.log);
+                      var entry = {username:user.username, token:chunk.toString('utf8')};
+                      collection.insert(entry, {safe: true}, console.log);
+                    });
+                  });
+                }
+              });
             });
-          });
+          }
           cb();
         });
       },
@@ -159,23 +160,18 @@ function retrieve_friends(req, res) {
     var body = req.body;
     db.collection(body.uid, function(err, collection) {
       var reg = new RegExp("(^" + body.name_startsWith + ".*)|(.+ " + body.name_startsWith +")", "i");
-      console.log(reg);
       collection.find({"name": reg}).toArray(function(err, array) {
         res.send(JSON.stringify(array));
       });
     });
   } else {
-    console.log("user not logged in");
+    console.log("retrieve_friends: user not logged in");
   }
 }
 
 // retrieve the links corresponding to a given uid
 function retrieve_links(req, res) {
   if (req.facebook.token) {
-    req.facebook.get('/me/permissions', {}, function(res) {
-      console.log("Permissions");
-      console.log(res);
-    })
     req.facebook.get("/" + req.params.id, {}, function(user) {
       req.facebook.get("/" + req.params.id + "/links", {}, function(links) {
         res.set('Content-Type', 'text/xml');
@@ -187,14 +183,22 @@ function retrieve_links(req, res) {
     });
  } else {
     // remote access of feed itself
-    console.log("user not logged in");
+    console.log("retrieve_links: user not logged in");
+    db.collection('tokens', function(err, collection) {
+      if (err) console.log(err);
+      collection.findOne({username:req.params.user}, function(err, item) {
+        if (item != null) {
+          console.log(item["token"]);
+        }
+      });
+    });
  }
 }
 
 // handle logout
 function logout(req, res) {
   db.dropCollection(req.body.uid, function() {});
-  db.collection('tokens').remove();
+  //db.collection('tokens').remove();
 }
 
 app.get('/', handle_facebook_request);
