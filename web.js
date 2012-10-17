@@ -20,7 +20,7 @@ app.use(express.session({ secret: process.env.SESSION_SECRET || 'secret123' }));
 app.use(require('faceplate').middleware({
     app_id: process.env.FACEBOOK_APP_ID,
     secret: process.env.FACEBOOK_SECRET,
-    scope:  'user_likes,user_photos,user_photo_video_tags'
+    scope:  'read_stream'
   })
 );
 
@@ -63,6 +63,9 @@ app.listen(port, function() {
   console.log("Listening on " + port);
 });
 
+
+// server functions
+
 function render_page(req, res) {
   req.facebook.app(function(app) {
     req.facebook.me(function(user) {
@@ -72,6 +75,22 @@ function render_page(req, res) {
         user:      user,
         app_id:    process.env.FACEBOOK_APP_ID
       });
+    });
+  });
+}
+
+// perform server-side graph api calls
+function graph_get(path, token, cb) {
+  https.get("https://graph.facebook.com/" + path + "?" + token, function(response) {
+    var output = '';
+    
+    response.on("data", function(chunk) {
+      output += chunk;
+    });
+
+    response.on('end', function() {
+      var result = JSON.parse(output);
+      cb(result.data ? result.data : result);
     });
   });
 }
@@ -95,8 +114,7 @@ function handle_facebook_request(req, res) {
                     host: 'graph.facebook.com',
                     path: '/oauth/access_token?client_id=' + app_id + 
                     '&client_secret=' + secret +
-                    '&grant_type=fb_exchange_token&fb_exchange_token=' + req.facebook.token,
-                    method: 'GET'
+                    '&grant_type=fb_exchange_token&fb_exchange_token=' + req.facebook.token
                   };
                   https.get(options, function(response) {
                     response.on("data", function(chunk) {
@@ -113,8 +131,8 @@ function handle_facebook_request(req, res) {
         });
       },
       function(cb) {
-        // query 4 friends and send them to the socket for this socket id
-        req.facebook.get('/me/friends', { }, function(friends) {
+        // query friend list
+        req.facebook.get('/me/friends', {}, function(friends) {
           req.friends = JSON.stringify(friends);
           req.facebook.me(function(user) {
             
@@ -127,13 +145,6 @@ function handle_facebook_request(req, res) {
             });
 
           });
-          cb();
-        });
-      },
-      function(cb) {
-        // use fql to get a list of my friends that are using this app
-        req.facebook.fql('SELECT uid, name, is_app_user, pic_square FROM user WHERE uid in (SELECT uid2 FROM friend WHERE uid1 = me()) AND is_app_user = 1', function(result) {
-          req.friends_using_app = result;
           cb();
         });
       },
@@ -182,13 +193,21 @@ function retrieve_links(req, res) {
       });
     });
  } else {
-    // remote access of feed itself
+    // remote accessing of feed
     console.log("retrieve_links: user not logged in");
     db.collection('tokens', function(err, collection) {
       if (err) console.log(err);
       collection.findOne({username:req.params.user}, function(err, item) {
-        if (item != null) {
-          console.log(item["token"]);
+        if (item !== null) {
+          var token = item["token"];
+          graph_get("/" + req.params.id, token, function(user) {
+            graph_get("/" + req.params.id + "/links", token, function(links) {
+              res.render('rss.ejs', {
+                user:     user.name,
+                links:     links
+              });
+            });
+          });
         }
       });
     });
@@ -198,7 +217,6 @@ function retrieve_links(req, res) {
 // handle logout
 function logout(req, res) {
   db.dropCollection(req.body.uid, function() {});
-  //db.collection('tokens').remove();
 }
 
 app.get('/', handle_facebook_request);
