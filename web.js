@@ -79,20 +79,31 @@ function render_page(req, res) {
   });
 }
 
-// perform server-side graph api calls
-function graph_get(path, token, cb) {
-  https.get("https://graph.facebook.com/" + path + "?" + token, function(response) {
+
+// callback to parse facebook JSON data
+function graph_parse(cb) {
+  return function(res) {
     var output = '';
     
-    response.on("data", function(chunk) {
-      output += chunk;
+    res.on("data", function(chunk) {
+    output += chunk;
     });
 
-    response.on('end', function() {
+    res.on('end', function() {
       var result = JSON.parse(output);
       cb(result.data ? result.data : result);
     });
-  });
+  }
+}
+
+// perform server-side graph api calls
+function graph_get(path, token, cb) {
+  https.get("https://graph.facebook.com/" + path + "?" + token, graph_parse(cb));
+}
+
+// retrieve user info from facebook given a facebook username or id
+function userinfo(user, cb) {
+  https.get("https://graph.facebook.com/" + user, graph_parse(cb));
 }
 
 function handle_facebook_request(req, res) {
@@ -106,7 +117,6 @@ function handle_facebook_request(req, res) {
         req.facebook.me(function(user) {
           if (user != null && user.id != null) {
             db.collection('tokens', function(err, collection) {
-              if (err) console.log(err);
               collection.findOne({username:user.username}, function(err, item) {
                 // add token into db if one doesn't exist
                 if (item == null) {
@@ -132,18 +142,16 @@ function handle_facebook_request(req, res) {
       },
       function(cb) {
         // query friend list
-        req.facebook.get('/me/friends', {}, function(friends) {
-          req.friends = JSON.stringify(friends);
-          req.facebook.me(function(user) {
-            
-            // insert friend list into a collection corresponding to fb user id
-            db.createCollection(user.id, {safe: true}, function(err, collection) {
-              if (err) return;
+        req.facebook.me(function(user) {
+          // insert friend list into a collection corresponding to fb user id
+          db.createCollection("friends"+user.id, {safe: true}, function(err, collection) {
+            if (err) return;
+            req.facebook.get('/me/friends', {}, function(friends) {
+              req.friends = JSON.stringify(friends);
               collection.insert(friends, {safe:true}, function(err, result) {
                 if (err) throw err;
               });
             });
-
           });
           cb();
         });
@@ -169,7 +177,7 @@ function retrieve_friends(req, res) {
   // if the user is logged in
   if (req.facebook.token) {
     var body = req.body;
-    db.collection(body.uid, function(err, collection) {
+    db.collection("friends"+body.uid, function(err, collection) {
       var reg = new RegExp("(^" + body.name_startsWith + ".*)|(.+ " + body.name_startsWith +")", "i");
       collection.find({"name": reg}).toArray(function(err, array) {
         res.send(JSON.stringify(array));
@@ -180,43 +188,62 @@ function retrieve_friends(req, res) {
   }
 }
 
-// retrieve the links corresponding to a given uid
-function retrieve_links(req, res) {
-  if (req.facebook.token) {
+function initialize_links(req, res, user) {
+  db.createCollection(user.id + "." + req.params.id, function(err, collection) {
     req.facebook.get("/" + req.params.id, {}, function(user) {
       req.facebook.get("/" + req.params.id + "/links", {}, function(links) {
+        collection.insert(links, {safe:true}, console.log);
         res.set('Content-Type', 'text/xml');
         res.render('rss.ejs', {
           user:     user.name,
           links:    links
-        });
-      });
+       });
+     });
     });
- } else {
-    // remote accessing of feed
-    console.log("retrieve_links: user not logged in");
-    db.collection('tokens', function(err, collection) {
-      if (err) console.log(err);
-      collection.findOne({username:req.params.user}, function(err, item) {
-        if (item !== null) {
-          var token = item["token"];
-          graph_get("/" + req.params.id, token, function(user) {
-            graph_get("/" + req.params.id + "/links", token, function(links) {
-              res.render('rss.ejs', {
-                user:     user.name,
-                links:     links
-              });
+  });
+}
+
+// retrieve the links corresponding to a given uid
+function retrieve_links(req, res) {
+  userinfo(req.params.user, function(user) {
+    if (req.facebook.token) {
+      db.collection(user.id + "." + req.params.id, {safe:true}, function(err, collection) {
+        if (err) initialize_links(req, res, user);
+        else {
+          collection.find().toArray(function(err, links) {
+            res.render('rss.ejs', {
+              user:     user.name,
+              links:    links
             });
           });
         }
       });
-    });
- }
+    } else {
+      // remote accessing of feed
+      console.log("retrieve_links: user not logged in");
+      db.collection('tokens', function(err, collection) {
+        if (err) console.log(err);
+        collection.findOne({username:req.params.user}, function(err, item) {
+          if (item !== null) {
+            var token = item["token"];
+            graph_get("/" + req.params.id, token, function(user) {
+             graph_get("/" + req.params.id + "/links", token, function(links) {
+               res.render('rss.ejs', {
+                 user:     user.name,
+                 links:     links
+               });
+             });
+            });
+          }
+        });
+      });
+    }
+  });
 }
 
 // handle logout
 function logout(req, res) {
-  db.dropCollection(req.body.uid, function() {});
+  db.dropCollection("friends"+req.body.uid, function() {});
 }
 
 app.get('/', handle_facebook_request);
