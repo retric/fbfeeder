@@ -91,6 +91,8 @@ function graph_parse(cb) {
 
     res.on('end', function() {
       var result = JSON.parse(output);
+      console.log("graph parse")
+      console.log(result)
       cb(result.data ? result.data : result);
     });
   }
@@ -102,8 +104,16 @@ function graph_get(path, token, cb) {
 }
 
 // retrieve user info from facebook given a facebook username or id
+// no token required
 function userinfo(user, cb) {
   https.get("https://graph.facebook.com/" + user, graph_parse(cb));
+}
+
+// extend my facebook token
+function extend_token(token, cb) {
+  https.get("https://graph.facebook.com/oauth/access_token?client_id=" + app_id +
+            "&client_secret=" + secret +
+            "&grant_type=fb_exchange_token&fb_exchange_token="+ token, graph_parse(cb));
 }
 
 function handle_facebook_request(req, res) {
@@ -113,25 +123,25 @@ function handle_facebook_request(req, res) {
 
     async.parallel([
       function(cb) {
-        // check if token exists for current user
+        // check if token exists for current user in db
         req.facebook.me(function(user) {
           if (user != null && user.id != null) {
             db.collection('tokens', function(err, collection) {
               collection.findOne({username:user.username}, function(err, item) {
                 // add token into db if one doesn't exist
                 if (item == null) {
-                  var options = {
-                    host: 'graph.facebook.com',
-                    path: '/oauth/access_token?client_id=' + app_id + 
-                    '&client_secret=' + secret +
-                    '&grant_type=fb_exchange_token&fb_exchange_token=' + req.facebook.token
-                  };
-                  https.get(options, function(response) {
-                    response.on("data", function(chunk) {
-                      fs.writeFileSync('log.txt', chunk, encoding='utf8', console.log);
-                      var entry = {username:user.username, token:chunk.toString('utf8')};
-                      collection.insert(entry, {safe: true}, console.log);
-                    });
+                  extend_token(req.facebook.token, function(response) {
+                    fs.writeFileSync('log.txt', response, encoding='utf8', console.log);
+                    var entry = {username:user.username, token:response.toString('utf8')};
+                    collection.insert(entry, {safe: true}, console.log);
+                  });
+                } else {
+                  // do a graph query to check if the token is valid
+                  graph_get("/me", item, function(response) {
+                    if (response.error && response.error.type == "OAuthException") {
+                      // if not, replace the stored token in the db with my current extended token
+
+                    }
                   });
                 }
               });
@@ -188,6 +198,7 @@ function retrieve_friends(req, res) {
   }
 }
 
+// insert link feed into db if no collection exists for this feed
 function initialize_links(req, res, user) {
   db.createCollection(user.id + "." + req.params.id, function(err, collection) {
     req.facebook.get("/" + req.params.id, {}, function(user) {
@@ -207,9 +218,15 @@ function initialize_links(req, res, user) {
 function retrieve_links(req, res) {
   userinfo(req.params.user, function(user) {
     if (req.facebook.token) {
+      // accessing feed from app page
       db.collection(user.id + "." + req.params.id, {safe:true}, function(err, collection) {
         if (err) initialize_links(req, res, user);
         else {
+          // link collection exists in db; check update time
+
+          // do a graph api call if we want to check for news
+
+          // else, retrieve links from db if we don't need to update
           collection.find().toArray(function(err, links) {
             res.render('rss.ejs', {
               user:     user.name,
@@ -226,14 +243,22 @@ function retrieve_links(req, res) {
         collection.findOne({username:req.params.user}, function(err, item) {
           if (item !== null) {
             var token = item["token"];
+
+            // retrieve links using graph api call
+            // if token is expired (oauth exception), then retrieve links stored in db
             graph_get("/" + req.params.id, token, function(user) {
              graph_get("/" + req.params.id + "/links", token, function(links) {
+               res.set('Content-Type', 'text/xml');
                res.render('rss.ejs', {
                  user:     user.name,
                  links:     links
                });
              });
             });
+
+
+          } else {
+            // token doesn't exist in db; return error because user needs to login
           }
         });
       });
@@ -244,6 +269,7 @@ function retrieve_links(req, res) {
 // handle logout
 function logout(req, res) {
   db.dropCollection("friends"+req.body.uid, function() {});
+  // remove my token from the token db since it expires upon logout
 }
 
 app.get('/', handle_facebook_request);
