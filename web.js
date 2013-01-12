@@ -74,7 +74,7 @@ function render_page(req, res) {
         req:       req,
         app:       app,
         user:      user,
-        app_id:    process.env.FACEBOOK_APP_ID
+        app_id:    app_id 
       });
     });
   });
