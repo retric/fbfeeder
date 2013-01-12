@@ -26,6 +26,7 @@ app.use(require('faceplate').middleware({
 
 var app_id = process.env.FACEBOOK_APP_ID;
 var secret = process.env.FACEBOOK_SECRET;
+var scope = 'read_stream';
 
 // workaround for dynamichelpers in express 3
 app.use(function(req, res, next){
@@ -120,9 +121,9 @@ function handle_facebook_request(req, res) {
 
   // if the user is logged in
   if (req.facebook.token) {
-
+    console.log("main function");
     async.parallel([
-      function(cb) {
+      /* function(cb) {
         // check if token exists for current user in db
         req.facebook.me(function(user) {
           if (user != null && user.id != null) {
@@ -149,7 +150,7 @@ function handle_facebook_request(req, res) {
           }
           cb();
         });
-      },
+      }, */
       function(cb) {
         // query friend list
         req.facebook.me(function(user) {
@@ -202,7 +203,7 @@ function retrieve_friends(req, res) {
 function initialize_links(req, res, user) {
   db.createCollection(user.id + "." + req.params.id, function(err, collection) {
     req.facebook.get("/" + req.params.id, {}, function(user) {
-      req.facebook.get("/" + req.params.id + "/links", {}, function(links) {
+      req.facebook.get("/" + req.params.id + "/links", { limit: 1000 }, function(links) {
         collection.insert(links, {safe:true}, console.log);
         res.set('Content-Type', 'text/xml');
         res.render('rss.ejs', {
@@ -222,11 +223,7 @@ function retrieve_links(req, res) {
       db.collection(user.id + "." + req.params.id, {safe:true}, function(err, collection) {
         if (err) initialize_links(req, res, user);
         else {
-          // link collection exists in db; check update time
-
-          // do a graph api call if we want to check for news
-
-          // else, retrieve links from db if we don't need to update
+          // retrieve links from db 
           collection.find().toArray(function(err, links) {
             res.render('rss.ejs', {
               user:     user.name,
@@ -235,7 +232,7 @@ function retrieve_links(req, res) {
           });
         }
       });
-    } else {
+    } /*else {
       // remote accessing of feed
       console.log("retrieve_links: user not logged in");
       db.collection('tokens', function(err, collection) {
@@ -262,7 +259,7 @@ function retrieve_links(req, res) {
           }
         });
       });
-    }
+    } */
   });
 }
 
