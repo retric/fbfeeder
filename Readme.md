@@ -1,7 +1,5 @@
-Facebook/Heroku sample app -- Node.js
+Facebook/Heroku app -- Node.js
 =====================================
-
-This is a sample app showing use of the Facebook Graph API, written in Node.js, designed for deployment to [Heroku](http://www.heroku.com/).
 
 Run locally
 -----------
@@ -9,6 +7,7 @@ Run locally
 Install dependencies:
 
     npm bundle install
+    npm install git://github.com/bnoguchi/everyauth.git#express3
 
 [Create an app on Facebook](https://developers.facebook.com/apps) and set the Website URL to `http://localhost:5000/`.
 
