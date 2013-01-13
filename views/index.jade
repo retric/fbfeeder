@@ -1,0 +1,22 @@
+- var items = ["facebook"]
+
+- if (!everyauth.loggedIn)
+  #fb-login
+    h1 Welcome
+    a(href='/auth/facebook', style='border: 0px')
+      img(style='border: 0px', src='http://github.com/intridea/authbuttons/raw/master/png/facebook_64.png')
+- else
+  #welcome
+    header(class='clearfix')
+      :markdown
+        Welcome, **#{user.id}**
+        =======================
+      #test
+        input(type='text', id='friendlist', placeholder='Find your friends')
+      #logout
+        a(href='#', id='logout') Logout
+    section(id='samples', class='clearfix')
+      h1 Links
+      #list
+        h3 Links you've posted
+        

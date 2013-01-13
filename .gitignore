@@ -1,4 +1,4 @@
 .env
 *.bat
 *.txt
-
+node_modules/
