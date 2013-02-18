@@ -16,6 +16,24 @@ var app_id = process.env.FACEBOOK_APP_ID;
 var secret = process.env.FACEBOOK_SECRET;
 var scope = 'read_stream';
 
+// temporary var storage
+var usersById = {};
+var nextUserId = 0;
+var usersByFbId = {};
+
+function addUser (source, sourceUser) {
+  var user;
+  if (arguments.length === 1) {
+    user = sourceUser = source;
+    user.id = ++nextUserId;
+    return usersById[nextUserId] = user;
+  } else { // non-password-based
+    user = usersById[++nextUserId] = {id: nextUserId};
+    user[source] = sourceUser; 
+  }
+  return user;
+}
+
 /* setup mongoose with auth support
 var mongoose = require('mongoose'),
   Schema   = mongoose.Schema,
@@ -23,26 +41,6 @@ var mongoose = require('mongoose'),
 
 var UserSchema   = new Schema({}),
   User;
-var mongooseAuth = require('mongoose-auth');
-
-// mongooseAuth: Schema decoration for routing
-UserSchema.plugin(mongooseAuth, {
-  everymodule: {
-    everyauth: {
-      User: function() {
-        return User;
-      }
-    }
-  },
-  facebook: {
-    everyauth: {
-      myHostname: 'http://localhost:3000',
-      appId: app_id,
-      appSecret: secret,
-      redirectPath: '/'
-    }
-  }
-});
 
 mongoose.model('User', UserSchema);
 mongoose.connect('mongodb://localhost/test');
@@ -50,12 +48,18 @@ mongoose.connect('mongodb://localhost/test');
 User = mongoose.model('User');
 */
 
+everyauth.everymodule
+  .findUserById( function (id, callback) {
+    callback(null, usersById[id]);
+  });
+
 everyauth.facebook
   .appId(app_id)
   .appSecret(secret)
   .scope('read_stream')
   .findOrCreateUser( function (session, accessToken, accessTokExtra, fbUserMetadata) {
-    
+    return usersByFbId[fbUserMetadata.id] ||
+      (usersByFbId[fbUserMetadata.id] = addUser('facebook', fbUserMetadata)); 
   })
   .redirectPath('/');
 
