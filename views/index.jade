@@ -9,8 +9,10 @@
   #welcome
     header(class='clearfix')
       :markdown
-        Welcome, **#{user.id}**
+        Welcome, #{everyauth.facebook.user.name}
         =======================
+      #data
+        p= 'data: ' + JSON.stringify(everyauth.facebook.user)
       #test
         input(type='text', id='friendlist', placeholder='Find your friends')
       #logout
