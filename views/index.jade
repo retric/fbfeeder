@@ -1,24 +1,33 @@
-- var items = ["facebook"]
+extends layout
 
-- if (!everyauth.loggedIn)
-  #fb-login
-    h1 Welcome
-    a(href='/auth/facebook', style='border: 0px')
-      img(style='border: 0px', src='http://github.com/intridea/authbuttons/raw/master/png/facebook_64.png')
-- else
-  #welcome
-    header(class='clearfix')
-      :markdown
-        Welcome, #{everyauth.facebook.user.name}
-        =======================
-      #data
-        p= 'data: ' + JSON.stringify(everyauth.facebook.user)
-      #test
-        input(type='text', id='friendlist', placeholder='Find your friends')
+block style
+  link(rel="stylesheet", href="/stylesheets/ui-lightness/jquery-ui-1.8.23.custom.css")
+
+block scripts
+  script(src="/scripts/jquery.min.js")
+  script(src="/scripts/jquery-ui-1.8.23.custom.min.js")
+  script(src="/scripts/index.js")
+
+block content
+  - var items = ["facebook"]
+
+  - if (!everyauth.loggedIn)
+    #fb-login
+      h1 Welcome
+      a(href='/auth/facebook', style='border: 0px')
+       img(style='border: 0px', src='http://github.com/intridea/authbuttons/raw/master/png/facebook_64.png')
+  - else
+    #welcome
+      header(class='clearfix')
+      h1 Welcome, #{everyauth.facebook.user.name}
       #logout
         a(href='#', id='logout') Logout
-    section(id='samples', class='clearfix')
-      h1 Links
-      #list
-        h3 Links you've posted
+      #data
+       p= 'data: ' + JSON.stringify(everyauth.facebook.user)
+      #friends
+        input(type='text', id='friendlist', placeholder='Find your friends')
+      section(id='samples', class='clearfix')
+        h1 Links
+        #list
+          h3 Links you've posted
         
