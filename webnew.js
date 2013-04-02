@@ -3,10 +3,24 @@
  */
 
 var express   = require('express');
-var feeder    = require('./routes/feeder');
 var https     = require('https');
 var dynamicHelpers = require('./dynamicHelpers');
 var everyauth = require('everyauth');
+var winston = require('winston').cli();
+
+// inject everyauth into feeder module
+var feeder    = require('./routes/feeder')(everyauth);
+
+function stringify (obj) {
+  return JSON.stringify(obj, null, 2);
+}
+
+// configure winston to log to file rather than console
+winston.add(winston.transports.File, {filename: 'feeder.log', timestamp: false, json: false});
+winston.remove(winston.transports.Console);
+winston.transports.File.stringify = stringify;
+winston.transports.Console.stringify = stringify;
+winston.info('testing');
 
 // create an express webserver
 var app = express();
@@ -97,5 +111,5 @@ app.get('/:user', feeder.user);
 app.get('/:user/:id', feeder.retrieve_links);
 
 // routes for functions
-app.get('/friendlist', feeder.retrieve_friends);
+app.post('/friendlist', feeder.retrieve_friends);
 app.get('/logout', feeder.logout);

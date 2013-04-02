@@ -9,7 +9,8 @@ Install dependencies:
     npm bundle install
     npm install git://github.com/bnoguchi/everyauth.git#express3
 
-    (note: everyauth#express3 currently has a bug involving redirectPath; refer to fix [here](https://github.com/TouchInnovation/everyauth/commit/92378ffc99678393f8b96187335116768b72eec9))
+note: everyauth#express3 currently has a bug involving redirectPath
+refer to fix [here](https://github.com/TouchInnovation/everyauth/commit/92378ffc99678393f8b96187335116768b72eec9)
 
 [Create an app on Facebook](https://developers.facebook.com/apps) and set the Website URL to `http://localhost:5000/`.
 
