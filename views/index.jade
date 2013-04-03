@@ -8,8 +8,12 @@ block scripts
   script(src="/scripts/jquery-ui-1.8.23.custom.min.js")
   script(src="/scripts/index.js")
 
+  if (everyauth.loggedIn)
+    script
+      userid= "#{everyauth.facebook.user.id}"
+
 block content
-  - var items = ["facebook"]
+  - var items = ["facebook"] 
 
   - if (!everyauth.loggedIn)
     #fb-login

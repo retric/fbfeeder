@@ -8,7 +8,7 @@ $(function() {
         dataType: "json",
         data: {
           name_startsWith: req.term,
-          uid: '<%= user.id %>'
+          uid: userid
         },
         success: function(data) {
           res($.map(data, function (friend) {

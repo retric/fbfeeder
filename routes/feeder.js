@@ -25,8 +25,13 @@ module.exports = function(everyauth) {
 		// handle retrieval of friends
 		retrieve_friends: function(req, res) {
   			if (typeof req.user != undefined) {
+  				var accessToken = req.session.auth.facebook.accessToken;
   				winston.info("entered retrieve friends");
-  				winston.info("everyauth:", everyauth.facebook);
+  				winston.info("params", req.body);
+  				winston.info(req.session.auth.facebook.accessToken);
+  				graph_get('/me/friends', accessToken, function() {
+  				  
+  				});
   			}
 		},
 
