@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-
 var express   = require('express');
 var https     = require('https');
 var dynamicHelpers = require('./dynamicHelpers');
@@ -30,11 +29,43 @@ var app_id = process.env.FACEBOOK_APP_ID;
 var secret = process.env.FACEBOOK_SECRET;
 var scope = 'read_stream';
 
+// db setup
+
+// setup mongodb
+var MongoClient = require('mongodb').MongoClient;
+
+// Connect to the db
+MongoClient.connect("mongodb://localhost:27017/friendDb", function(err, db) {
+  if (err) { return console.dir(err); }
+
+  db.collection('');
+});
+
+
+
+/* setup mongoose
+var mongoose = require('mongoose'),
+  Schema   = mongoose.Schema,
+  ObjectId = mongoose.SchemaTypes.ObjectId;
+
+mongoose.model('User', UserSchema);
+mongoose.connect('mongodb://localhost/test');
+
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'connection error:'));
+db.once('open', function callback () {
+  var UserSchema = Schema({});
+  User = mongoose.model('User', UserSchema);
+}); */
+
+// everyauth setup
+
 // temporary var storage
 var usersById = {};
 var nextUserId = 0;
 var usersByFbId = {};
 
+// for use by everyauth
 function addUser (source, sourceUser) {
   var user;
   if (arguments.length === 1) {
@@ -48,20 +79,7 @@ function addUser (source, sourceUser) {
   return user;
 }
 
-/* setup mongoose with auth support
-var mongoose = require('mongoose'),
-  Schema   = mongoose.Schema,
-  ObjectId = mongoose.SchemaTypes.ObjectId;
-
-var UserSchema   = new Schema({}),
-  User;
-
-mongoose.model('User', UserSchema);
-mongoose.connect('mongodb://localhost/test');
-
-User = mongoose.model('User');
-*/
-
+// everyauth module setup
 everyauth.everymodule
   .findUserById( function (id, callback) {
     callback(null, usersById[id]);
