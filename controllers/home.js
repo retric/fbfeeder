@@ -3,7 +3,14 @@
  * Home page.
  */
 exports.index = function(req, res) {
-  res.render('home', {
-    title: 'Home'
-  });
+  
+  if (req.isAuthenticated()) {
+    res.render ('feeder', {
+      title: 'Feeder'
+    });
+  } else {
+    res.render('home', {
+      title: 'Home'
+    });
+  }
 };
