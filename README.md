@@ -1,13 +1,19 @@
 Feeder
 ==========
-Feeds curated by your friends.
 
-Initial dev version in progress.
+Getting Started 
+--------------- 
 
-Getting Started
----------------
-Requires a running instance of MongoDB.
+Dependencies: 
 
+- Node.js
+- MongoDB.
+- FACEBOOK_ID and FACEBOOK_SECRET environment variables set
+
+The last dependency requires that you have created an app at [Facebook
+Developers] (https://developers.facebook.com) and generated an App ID and App
+Secret.
+ 
 Clone and setup:
 
     $ git clone https://github.com/retric/feeder.git myproject
@@ -19,7 +25,7 @@ Clone and setup:
 
     $ node app.js
 
-Notes
------
+Notes 
+----- 
 Node.js boilerplate modified from [hackathon-starter]
 (https://github.com/sahat/hackathon-starter).

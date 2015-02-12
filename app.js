@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-
 var express = require('express');
 var cookieParser = require('cookie-parser');
 var compress = require('compression');
@@ -22,6 +21,7 @@ var connectAssets = require('connect-assets');
 /**
  * Controllers (route handlers).
  */
+var apiController = require('./controllers/api');
 var homeController = require('./controllers/home');
 var userController = require('./controllers/user');
 
@@ -34,13 +34,11 @@ var passportConf = require('./config/passport');
 /**
  * Create Express server.
  */
-
 var app = express();
 
 /**
  * Connect to MongoDB.
  */
-
 mongoose.connect(secrets.db);
 mongoose.connection.on('error', function() {
     console.error('MongoDB Connection Error. Please make sure that MongoDB is running.');
@@ -98,12 +96,12 @@ app.get('/account/unlink/:provider', passportConf.isAuthenticated, userControlle
 /**
  * API routes.
  */
-app.get('/api/facebook', passportConf.isAuthenticated, passportConf.isAuthorized, apiController.getFacebook);
+app.get('/api/facebook/feed', passportConf.isAuthenticated, passportConf.isAuthorized, apiController.getFacebookFeed);
 
 /**
  * OAuth authentication routes. (Sign in)
  */
-app.get('/auth/facebook', passport.authenticate('facebook', { scope: ['read_stream'] }));
+app.get('/auth/facebook', passport.authenticate('facebook', { scope: ['read_stream', 'user_friends'] }));
 app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }), function(req, res) {
   res.redirect(req.session.returnTo || '/');
 });

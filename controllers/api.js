@@ -5,9 +5,9 @@ var graph = require('fbgraph');
 var _ = require('lodash');
 
 /**
- *  * GET /api/facebook
- *   * Facebook API example.
- *    */
+ * GET /api/facebook
+ * Facebook API example.
+ */
 exports.getFacebook = function(req, res, next) {
   var token = _.find(req.user.tokens, { kind: 'facebook' });
   graph.setAccessToken(token.accessToken);
@@ -18,18 +18,26 @@ exports.getFacebook = function(req, res, next) {
       });
     },
     getMyFriends: function(done) {
-      graph.get(req.user.facebook + '/friends', function(err, friends) {
+      graph.get('me' + '/taggable_friends', function(err, friends) {
         done(err, friends.data);
       });
     }
   },
   function(err, results) {
     if (err) return next(err);
-    res.render('api/facebook', {
+    res.send({
       title: 'Facebook API',
       me: results.getMe,
       friends: results.getMyFriends
     });
   });
+};
+
+/**
+ * GET /api/facebook/feed
+ */
+exports.getFacebookFeed = function(req, res, next) {
+  var token = _.find(req.user.tokens, { kind: 'facebook' });
+  graph.setAccessToken(token.accessToken);
 };
 
